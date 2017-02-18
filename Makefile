@@ -43,6 +43,8 @@ endif
 #############################################################################
 -include Makefile.local
 
+CFLAGS+=-std=c99
+
 ifeq ($(COMPILE_PLATFORM),cygwin)
   PLATFORM=mingw32
 endif
