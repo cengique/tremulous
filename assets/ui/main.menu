@@ -200,7 +200,7 @@
         {
             name copyright
             type ITEM_TYPE_TEXT
-            text "Copyright (C) 2015-2018 GrangerHub"
+            text "Copyright (C) 2015-2019 GrangerHub"
             style WINDOW_STYLE_EMPTY
             textstyle ITEM_TEXTSTYLE_NORMAL
             textscale .30
