@@ -2,6 +2,7 @@
 
   Copyright (C) 2008 Ludwig Nussel <ludwig.nussel@suse.de>
   Copyright (C) 2000-2013 Darklegion Development
+	Copyright (C) 2015-2018 GrangerHub
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,4 +38,4 @@ void mumble_set_identity(const char* identity);
 
 void mumble_unlink(void);
 
-#endif
+#endif // _LIBMUMBLELINK_H_

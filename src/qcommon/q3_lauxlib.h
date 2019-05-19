@@ -1,5 +1,6 @@
 // This file is part of Tremulous.
 // Copyright © 2016 Victor Roemer (blowfish) <victor@badsec.org>
+// Copyright (C) 2015-2018 GrangerHub
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,9 +25,13 @@
 extern "C" {
 #endif
 
-size_t lua_writestring(char* string, size_t n);
-int lua_writeline(void);
-int lua_writestringerror(const char *fmt, ...);
+size_t qlua_writestring(const char* string, size_t n);
+int qlua_writeline(void);
+int qlua_writestringerror(const char *fmt, ...);
+
+#define lua_writestring      qlua_writestring
+#define lua_writeline        qlua_writeline
+#define lua_writestringerror qlua_writestringerror
 
 #define LUA_TMPNAMTEMPLATE	"/tmp/tremulous_XXXXXX"
 

@@ -1,5 +1,6 @@
 // This file is part of Tremulous.
 // Copyright © 2016 Victor Roemer (blowfish) <victor@badsec.org>
+// Copyright (C) 2015-2018 GrangerHub
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,8 +28,9 @@
 #include <iostream>
 #include <exception>
 
-#include "../qcommon/q_shared.h"
-#include "../qcommon/qcommon.h"
+#include "qcommon/cvar.h"
+#include "qcommon/q_shared.h"
+#include "qcommon/qcommon.h"
 
 namespace sol
 {
@@ -110,11 +112,11 @@ namespace script
                 throw CvarLatchedUnsupported();
             else if ( !value )
                 value = my->resetString;
-            value = Cvar_Validate(my, value, qfalse);
+            value = Cvar_Validate(my, value, false);
 
             cvar_modifiedFlags |= my->flags;
 
-            my->modified = qtrue;
+            my->modified = true;
             my->modificationCount++;
             my->string = CopyString(value);
             my->value = atof(my->string);

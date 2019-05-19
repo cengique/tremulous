@@ -1,6 +1,7 @@
 /*
 ===========================================================================
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -19,7 +20,6 @@ along with Tremulous; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-
 
 #include "cg_local.h"
 
@@ -478,5 +478,3 @@ void THZ_DrawScanner( rectDef_t *rect )
         }
     }
 }
-
-

@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -24,7 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_servercmds.c -- reliably sequenced text commands sent by the server
 // these are processed at snapshot transition time, so there will definately
 // be a valid snapshot this frame
-
 
 #include "cg_local.h"
 
@@ -1077,7 +1077,7 @@ voice clientNum vChan cmdNum trackNum [sayText]
 static void CG_ParseVoice( void )
 {
   int clientNum;
-  voiceChannel_t vChan;
+  int vChan;
   char sayText[ MAX_SAY_TEXT] = {""};
   voiceTrack_t *track;
   clientInfo_t *ci;

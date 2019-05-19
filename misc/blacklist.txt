@@ -1,2 +1,0 @@
-fun:VM_Call
-fun:VM_DllSyscall

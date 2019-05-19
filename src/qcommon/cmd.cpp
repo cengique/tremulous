@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -22,11 +23,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // cmd.c -- Quake script command processing module
 
+#include "cmd.h"
+
+#include "cvar.h"
+#include "files.h"
 #include "q_shared.h"
 #include "qcommon.h"
 
 #ifndef DEDICATED
-#include "../client/client.h"
+#include "client/client.h"
 #endif
 
 #define	MAX_CMD_BUFFER  128*1024
@@ -102,7 +107,7 @@ void Cbuf_AddText( const char *text ) {
 		Com_Printf ("Cbuf_AddText: overflow\n");
 		return;
 	}
-	Com_Memcpy(&cmd_text.data[cmd_text.cursize], text, l);
+	::memcpy(&cmd_text.data[cmd_text.cursize], text, l);
 	cmd_text.cursize += l;
 }
 
@@ -138,7 +143,7 @@ void Cbuf_InsertFmtText( const char *fmt, ... ) {
 	}
 
 	// copy the new text in
-	Com_Memcpy( cmd_text.data, text, len - 1 );
+	::memcpy( cmd_text.data, text, len - 1 );
 
 	// add a \n
 	cmd_text.data[ len - 1 ] = '\n';
@@ -162,7 +167,7 @@ void Cbuf_InsertText( const char *text ) {
 	}
 
 	// copy the new text in
-	Com_Memcpy( cmd_text.data, text, len - 1 );
+	::memcpy( cmd_text.data, text, len - 1 );
 
 	// add a \n
 	cmd_text.data[ len - 1 ] = '\n';
@@ -214,8 +219,8 @@ void Cbuf_Execute (void)
 	// This will keep // style comments all on one line by not breaking on
 	// a semicolon.  It will keep /* ... */ style comments all on one line by not
 	// breaking it for semicolon or newline.
-	qboolean in_star_comment = qfalse;
-	qboolean in_slash_comment = qfalse;
+	bool in_star_comment = false;
+	bool in_slash_comment = false;
 	while (cmd_text.cursize)
 	{
 		if ( cmd_wait > 0 ) {
@@ -237,11 +242,11 @@ void Cbuf_Execute (void)
 			if ( !(quotes&1)) {
 				if (i < cmd_text.cursize - 1) {
 					if (! in_star_comment && text[i] == '/' && text[i+1] == '/')
-						in_slash_comment = qtrue;
+						in_slash_comment = true;
 					else if (! in_slash_comment && text[i] == '/' && text[i+1] == '*')
-						in_star_comment = qtrue;
+						in_star_comment = true;
 					else if (in_star_comment && text[i] == '*' && text[i+1] == '/') {
-						in_star_comment = qfalse;
+						in_star_comment = false;
 						// If we are in a star comment, then the part after it is valid
 						// Note: This will cause it to NUL out the terminating '/'
 						// but ExecuteString doesn't require it anyway.
@@ -253,7 +258,7 @@ void Cbuf_Execute (void)
 					break;
 			}
 			if (! in_star_comment && (text[i] == '\n' || text[i] == '\r')) {
-				in_slash_comment = qfalse;
+				in_slash_comment = false;
 				break;
 			}
 		}
@@ -262,7 +267,7 @@ void Cbuf_Execute (void)
 			i = MAX_CMD_LINE - 1;
 		}
 				
-		Com_Memcpy (line, text, i);
+		::memcpy (line, text, i);
 		line[i] = 0;
 		
 // delete the text from the command buffer and move remaining commands down
@@ -398,7 +403,7 @@ Cmd_SaveCmdContext
 */
 void Cmd_SaveCmdContext( void )
 {
-	Com_Memcpy( &savedCmd, &cmd, sizeof( cmdContext_t ) );
+	::memcpy( &savedCmd, &cmd, sizeof( cmdContext_t ) );
 }
 
 /*
@@ -408,7 +413,7 @@ Cmd_RestoreCmdContext
 */
 void Cmd_RestoreCmdContext( void )
 {
-	Com_Memcpy( &cmd, &savedCmd, sizeof( cmdContext_t ) );
+	::memcpy( &cmd, &savedCmd, sizeof( cmdContext_t ) );
 }
 
 /*
@@ -426,7 +431,7 @@ Cmd_Argv
 ============
 */
 const char* Cmd_Argv( int arg ) {
-	if ( (unsigned)arg >= cmd.argc ) {
+	if ( arg >= cmd.argc ) {
 		return (char*)"\0";
 	}
 	return cmd.argv[arg];	
@@ -541,7 +546,7 @@ will point into this temporary buffer.
 */
 // NOTE TTimo define that to track tokenization issues
 //#define TKN_DBG
-static void Cmd_TokenizeString2( const char *text_in, qboolean ignoreQuotes ) {
+static void Cmd_TokenizeString2( const char *text_in, bool ignoreQuotes ) {
 	const char	*text;
 	char	*textOut;
 
@@ -650,7 +655,7 @@ Cmd_TokenizeString
 ============
 */
 void Cmd_TokenizeString( const char *text_in ) {
-	Cmd_TokenizeString2( text_in, qfalse );
+	Cmd_TokenizeString2( text_in, false );
 }
 
 /*
@@ -659,7 +664,7 @@ Cmd_TokenizeStringIgnoreQuotes
 ============
 */
 void Cmd_TokenizeStringIgnoreQuotes( const char *text_in ) {
-	Cmd_TokenizeString2( text_in, qtrue );
+	Cmd_TokenizeString2( text_in, true );
 }
 
 /*
@@ -673,7 +678,17 @@ cmd_function_t *Cmd_FindCommand( const char *cmd_name )
 	for( cmd = cmd_functions; cmd; cmd = cmd->next )
 		if( !Q_stricmp( cmd_name, cmd->name ) )
 			return cmd;
-	return NULL;
+	return nullptr;
+}
+
+/*
+============
+Cmd_FindCommand
+============
+*/
+bool Cmd_CommadExists( const char *cmd_name )
+{
+	return Cmd_FindCommand( cmd_name ) ? true : false;
 }
 
 /*
@@ -688,17 +703,16 @@ void	Cmd_AddCommand( const char *cmd_name, xcommand_t function ) {
 	if( Cmd_FindCommand( cmd_name ) )
 	{
 		// allow completion-only commands to be silently doubled
-		if( function != NULL )
+		if( function != nullptr )
 			Com_Printf( "Cmd_AddCommand: %s already defined\n", cmd_name );
 		return;
 	}
 
 	// use a small malloc to avoid zone fragmentation
-	//cmd = (cmd_function_t*) S_Malloc(sizeof(cmd_function_t));
 	cmd = new cmd_function_t;
 	cmd->name = CopyString( cmd_name );
 	cmd->function = function;
-	cmd->complete = NULL;
+	cmd->complete = nullptr;
 	cmd->next = cmd_functions;
 	cmd_functions = cmd;
 }
@@ -724,11 +738,13 @@ void Cmd_SetCommandCompletionFunc( const char *command, completionFunc_t complet
 Cmd_RemoveCommand
 ============
 */
-void	Cmd_RemoveCommand( const char *cmd_name ) {
+void Cmd_RemoveCommand( const char *cmd_name )
+{
 	cmd_function_t	*cmd, **back;
 
 	back = &cmd_functions;
-	while( 1 ) {
+	for ( ;; )
+    {
 		cmd = *back;
 		if ( !cmd ) {
 			// command wasn't active
@@ -759,10 +775,11 @@ void Cmd_RemoveCommandSafe( const char *cmd_name )
 
 	if( !cmd )
 		return;
+
 	if( cmd->function )
 	{
-		Com_Error( ERR_DROP, "Restricted source tried to remove "
-			"system command \"%s\"", cmd_name );
+		Com_Error( ERR_DROP, "Restricted source tried to remove system command \"%s\"",
+                cmd_name );
 		return;
 	}
 
@@ -791,9 +808,14 @@ void Cmd_CompleteArgument( const char *command, char *args, int argNum )
 {
     cmd_function_t	*cmd;
 
+    // FIXIT-H: There needs to be a way to toggle this functionality at runtime
+    // rather than just crashing when a cgame doesn't provide support. #45
+    //  https://github.com/GrangerHub/tremulous/issues/45
+#if 0
 #ifndef DEDICATED
     // Forward command argument completion to CGAME VM
-    if( cgvm && !VM_Call( cgvm, CG_CONSOLE_COMPLETARGUMENT, argNum ) )
+    if( cls.cgame && !VM_Call( cls.cgame, CG_CONSOLE_COMPLETARGUMENT, argNum ) )
+#endif
 #endif
     // Call local completion if VM doesn't pick up
     for( cmd = cmd_functions; cmd; cmd = cmd->next )
@@ -877,12 +899,12 @@ void Cmd_List_f (void)
 	if ( Cmd_Argc() > 1 ) {
 		match = Cmd_Argv( 1 );
 	} else {
-		match = NULL;
+		match = nullptr;
 	}
 
 	i = 0;
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next) {
-		if (match && !Com_Filter(match, cmd->name, qfalse)) continue;
+		if (match && !Com_Filter(match, cmd->name, false)) continue;
 
 		Com_Printf ("%s\n", cmd->name);
 		i++;
@@ -897,7 +919,7 @@ Cmd_CompleteCfgName
 */
 void Cmd_CompleteCfgName( char *args, int argNum ) {
 	if( argNum == 2 ) {
-		Field_CompleteFilename( "", "cfg", qfalse, qtrue );
+		Field_CompleteFilename( "", "cfg", false, true );
 	}
 }
 
@@ -917,4 +939,3 @@ void Cmd_Init (void) {
 	Cmd_AddCommand ("echo",Cmd_Echo_f);
 	Cmd_AddCommand ("wait", Cmd_Wait_f);
 }
-

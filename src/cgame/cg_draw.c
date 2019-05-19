@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -24,9 +25,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_draw.c -- draw all of the graphical elements during
 // active (after loading) gameplay
 
-
 #include "cg_local.h"
-#include "../ui/ui_shared.h"
+#include "ui/ui_shared.h"
 
 menuDef_t *menuScoreboard = NULL;
 
@@ -3808,4 +3808,3 @@ void CG_DrawActive( stereoFrame_t stereoView )
   // draw status bar and other floating elements
   CG_Draw2D( );
 }
-

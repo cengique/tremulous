@@ -12,6 +12,7 @@ cmake_minimum_required(VERSION 3.5)
 project(Tremulous C CXX)
 
 set(CMAKE_CXX_FLAGS -std=c++1y)
+set(CMAKE_C_FLAGS -std=gnu99)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
@@ -32,7 +33,7 @@ option(USE_INTERNAL_JPEG "" ON)
 option(USE_OPENAL "" ON)
 option(USE_OPENAL_DLOPEN "" ON)
 option(USE_VOIP "" OFF)
-option(USE_MUMBLE "" ON)
+option(USE_MUMBLE "" OFF)
 option(USE_CODEC_OPUS "" ON)
 option(USE_RESTCLIENT "" ON)
 
@@ -40,25 +41,24 @@ include(${CMAKE_SOURCE_DIR}/cmake/build_dir)
 include(${CMAKE_SOURCE_DIR}/cmake/debug_cflags)
 
 # builtins 
-add_subdirectory(src/SDL2)
-add_subdirectory(src/lua-5.3.3)
-add_subdirectory(src/nettle-3.3)
-add_subdirectory(src/zlib)
-add_subdirectory(src/jpeg-8c)
+add_subdirectory(external/SDL2)
+add_subdirectory(external/lua-5.3.3)
+add_subdirectory(external/nettle-3.3)
+add_subdirectory(external/zlib)
+add_subdirectory(external/jpeg-8c)
+add_subdirectory(external/restclient)
 
 # audio
-add_subdirectory(src/libspeex)
-add_subdirectory(src/opus-1.1)
-add_subdirectory(src/opusfile-0.5)
-add_subdirectory(src/libogg-1.3.1)
-add_subdirectory(src/libvorbis-1.3.4)
+add_subdirectory(external/opus-1.1.4)
+add_subdirectory(external/opusfile-0.8)
+add_subdirectory(external/libogg-1.3.2)
+add_subdirectory(external/libvorbis-1.3.5)
 
 # engine
 add_subdirectory(src/script)
 add_subdirectory(src/renderercommon)
 add_subdirectory(src/renderergl1)
 add_subdirectory(src/renderergl2)
-add_subdirectory(src/restclient)
 
 #         .                    .
 #   ___   |   `   ___  , __   _/_
@@ -83,7 +83,10 @@ add_subdirectory(src/server)
 # |    _  |   ' |    | |    | |    | |----' |   '
 #  `.___| /     `.__/| /    |  `---| `.___, /
 #                              \___/
-add_subdirectory(src/granger/src)
+
+if(BUILD_GRANGER)
+  add_subdirectory(src/granger/src)
+endif(BUILD_GRANGER)
 
 #  _______ ___ ___ _______                              __ __
 # |       |   |   |   |   | .----.-----.--------.-----.|__|  |.-----.----.

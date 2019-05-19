@@ -1,28 +1,31 @@
-
-#include <stdarg.h>
 #include "q3_lauxlib.h"
 
-#include <iostream>
 #include <sys/types.h>
 
+#include <cstdarg>
+#include <iostream>
+
+#include "sys/sys_shared.h"
+
+#include "cvar.h"
+#include "msg.h"
+#include "net.h"
 #include "q_shared.h"
 #include "qcommon.h"
 
-size_t lua_writestring(char* string, size_t n)
+size_t qlua_writestring(const char* string, size_t n)
 {
-#warning "FIXME: Tremded is not printing ANYTHING NOW"
 #ifndef DEDICATED
     CL_ConsolePrint( string );
 #endif
-    Q_StripIndentMarker( string );
+    Q_StripIndentMarker( const_cast<char*>(string) );
     Sys_Print( string );
 
     return n;
 }
 
-int lua_writeline(void)
+int qlua_writeline(void)
 {
-#warning "FIXME: Tremded is not printing ANYTHING NOW"
 #ifndef DEDICATED
     CL_ConsolePrint( "\n" );
 #endif
@@ -30,7 +33,7 @@ int lua_writeline(void)
     return 0;
 }
 
-int lua_writestringerror(const char *fmt, ...)
+int qlua_writestringerror(const char *fmt, ...)
 {
 	va_list	ap;
 	va_start(ap, fmt);

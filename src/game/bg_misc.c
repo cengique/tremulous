@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -23,8 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // bg_misc.c -- both games misc functions, all completely stateless
 
-#include "../qcommon/q_shared.h"
-#include "../qcommon/files.h"
+#include "qcommon/q_shared.h"
 #include "bg_public.h"
 
 int  trap_FS_FOpenFile( const char *qpath, fileHandle_t *f, enum FS_Mode mode );

@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -25,7 +26,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // interpolating between snapshots from the server or locally predicting
 // ahead the client's movement.
 // It also handles local physics interaction, like fragments bouncing off walls
-
 
 #include "cg_local.h"
 
@@ -630,9 +630,15 @@ void CG_PredictPlayerState( void )
   }
 
   if( pmove_msec.integer < 8 )
+  {
     trap_Cvar_Set( "pmove_msec", "8" );
+    trap_Cvar_Update(&pmove_msec);
+  }
   else if( pmove_msec.integer > 33 )
+  {
     trap_Cvar_Set( "pmove_msec", "33" );
+    trap_Cvar_Update(&pmove_msec);
+  }
 
   cg_pmove.pmove_fixed = pmove_fixed.integer;// | cg_pmove_fixed.integer;
   cg_pmove.pmove_msec = pmove_msec.integer;

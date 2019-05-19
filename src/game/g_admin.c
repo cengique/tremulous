@@ -1,6 +1,7 @@
 /*
 ===========================================================================
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -2328,7 +2329,7 @@ qboolean G_admin_listlayouts( gentity_t *ent )
   int count = 0;
   char *s;
   char layout[ MAX_QPATH ] = { "" };
-  int i = 0;
+  size_t i = 0;
 
   if( trap_Argc( ) == 2 )
     trap_Argv( 1, map, sizeof( map ) );
@@ -2465,7 +2466,7 @@ static qboolean ban_matchname( void *ban, const void *name )
 }
 static void ban_out( void *ban, char *str )
 {
-  int i;
+  size_t i;
   int colorlen1 = 0;
   char duration[ MAX_DURATION_LENGTH ];
   char *d_color = S_COLOR_WHITE;
@@ -2546,7 +2547,7 @@ qboolean G_admin_adminhelp( gentity_t *ent )
   g_admin_command_t *c;
   if( trap_Argc() < 2 )
   {
-    int i;
+    size_t i;
     int count = 0;
 
     ADMBP_begin();

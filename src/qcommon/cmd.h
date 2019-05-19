@@ -1,6 +1,7 @@
 /*
  * This file is part of Tremulous.
  * Copyright © 2017 Victor Roemer (blowfish) <victor@badsec.org>
+ * Copyright (C) 2015-2018 GrangerHub
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,10 +19,6 @@
 
 #ifndef CMD_H
 #define CMD_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
 ==============================================================
@@ -65,9 +62,11 @@ then searches for a command or variable that matches the first token.
 
 */
 
-typedef void (*xcommand_t)(void);
+using xcommand_t = void(*)();
 
 void Cmd_Init(void);
+
+bool Cmd_CommadExists( const char *cmd_name );
 
 void Cmd_AddCommand(const char *cmd_name, xcommand_t function);
 // called by the init functions of other parts of the program to
@@ -112,9 +111,5 @@ void Cmd_ExecuteString(const char *text);
 
 void Cmd_SaveCmdContext(void);
 void Cmd_RestoreCmdContext(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

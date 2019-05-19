@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -203,33 +204,8 @@ int    LongSwap (int l)
 	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
 }
 
-int	LongNoSwap (int l)
+float FloatSwap(const float *f)
 {
-	return l;
-}
-
-qint64 Long64Swap (qint64 ll)
-{
-	qint64	result;
-
-	result.b0 = ll.b7;
-	result.b1 = ll.b6;
-	result.b2 = ll.b5;
-	result.b3 = ll.b4;
-	result.b4 = ll.b3;
-	result.b5 = ll.b2;
-	result.b6 = ll.b1;
-	result.b7 = ll.b0;
-
-	return result;
-}
-
-qint64 Long64NoSwap (qint64 ll)
-{
-	return ll;
-}
-
-float FloatSwap (const float *f) {
 	floatint_t out;
 
 	out.f = *f;
@@ -238,7 +214,7 @@ float FloatSwap (const float *f) {
 	return out.f;
 }
 
-float FloatNoSwap (const float *f)
+float FloatNoSwap(const float *f)
 {
 	return *f;
 }
@@ -667,7 +643,8 @@ int Com_HexStrToInt( const char *str )
 	// check for hex code
 	if( str[ 0 ] == '0' && str[ 1 ] == 'x' )
 	{
-		int i, n = 0;
+        size_t i;
+		int n = 0;
 
 		for( i = 2; i < strlen( str ); i++ )
 		{
@@ -1410,7 +1387,7 @@ Com_CharIsOneOfCharset
 */
 static qboolean Com_CharIsOneOfCharset( char c, const char *set )
 {
-	int i;
+	size_t i;
 
 	for( i = 0; i < strlen( set ); i++ )
 	{
@@ -1426,7 +1403,7 @@ static qboolean Com_CharIsOneOfCharset( char c, const char *set )
 Com_SkipCharset
 ==================
 */
-char *Com_SkipCharset( char *s, char *sep )
+char *Com_SkipCharset( char *s, const char *sep )
 {
 	char	*p = s;
 

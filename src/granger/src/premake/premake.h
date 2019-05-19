@@ -5,9 +5,9 @@
  */
 
 #define lua_c
-#include "../lua/lua.h"
-#include "../lua/lauxlib.h"
-#include "../lua/lualib.h"
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
 
 
 /* Identify the current platform I'm not sure how to reliably detect

@@ -15,103 +15,108 @@ include(${CMAKE_SOURCE_DIR}/cmake/SDL2.cmake)
 add_definitions(
     -DUSE_LOCAL_HEADERS
     -DUSE_RESTCLIENT
-    -DUSE_VOIP
-    -DUSE_MUMBLE
     -DUSE_CODEC_OPUS
     -DUSE_OPENAL
     -DUSE_OPENAL_DLOPEN
     -DUSE_INTERNAL_JPEG
     -DUSE_RENDERER_DLOPEN
     -DNDEBUG
-    -DPRODUCT_VERSION="1.2.0 pre-release"
+    -DPRODUCT_VERSION="1.3.0 alpha"
     ${SDL2_DEFINES}
     )
 
 set(PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
+set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 if(APPLE)
-set(APPLE_SOURCES ${PARENT_DIR}/sys/sys_osx.m)
+set(APPLE_SOURCES ${PARENT_DIR}/sys/sys_osx.mm)
 endif(APPLE)
 
 add_executable(
     tremulous
     #
-    ${PARENT_DIR}/asm/ftola.c
     ${PARENT_DIR}/asm/snapvector.c
     #
-    cl_avi.c
-    cl_cgame.c
-    cl_cin.c
-    cl_console.c
-    cl_curl.c
-    cl_input.c
-    cl_keys.c
-    cl_main.c
-    cl_net_chan.c
-    cl_parse.c
+    cl_avi.cpp
+    cl_cgame.cpp
+    cl_cin.cpp
+    cl_console.cpp
+    cl_curl.cpp
+    cl_input.cpp
+    cl_keys.cpp
+    cl_main.cpp
+    cl_net_chan.cpp
+    cl_parse.cpp
     cl_rest.cpp
-    cl_scrn.c
-    cl_ui.c
+    cl_scrn.cpp
+    cl_ui.cpp
     cl_updates.cpp
-    libmumblelink.c
-    qal.c
-    snd_adpcm.c
-    snd_codec.c
-    snd_codec_ogg.c
-    snd_codec_opus.c
-    snd_codec_wav.c
-    snd_dma.c
-    snd_main.c
-    snd_mem.c
-    snd_mix.c
-    snd_openal.c
-    snd_wavelet.c
+    libmumblelink.cpp
+    qal.cpp
+    snd_adpcm.cpp
+    snd_codec.cpp
+    snd_codec_ogg.cpp
+    snd_codec_opus.cpp
+    snd_codec_wav.cpp
+    snd_dma.cpp
+    snd_main.cpp
+    snd_mem.cpp
+    snd_mix.cpp
+    snd_openal.cpp
+    snd_wavelet.cpp
     #
-    ${PARENT_DIR}/qcommon/cm_load.c
-    ${PARENT_DIR}/qcommon/cm_patch.c
-    ${PARENT_DIR}/qcommon/cm_polylib.c
-    ${PARENT_DIR}/qcommon/cm_test.c
-    ${PARENT_DIR}/qcommon/cm_trace.c
+    ${PARENT_DIR}/qcommon/cm_load.cpp
+    ${PARENT_DIR}/qcommon/cm_patch.cpp
+    ${PARENT_DIR}/qcommon/cm_polylib.cpp
+    ${PARENT_DIR}/qcommon/cm_test.cpp
+    ${PARENT_DIR}/qcommon/cm_trace.cpp
     ${PARENT_DIR}/qcommon/cmd.cpp
-    ${PARENT_DIR}/qcommon/common.c
-    ${PARENT_DIR}/qcommon/crypto.c
+    ${PARENT_DIR}/qcommon/common.cpp
+    ${PARENT_DIR}/qcommon/crypto.cpp
     ${PARENT_DIR}/qcommon/cvar.cpp
     ${PARENT_DIR}/qcommon/cvar.h
     ${PARENT_DIR}/qcommon/files.cpp
     ${PARENT_DIR}/qcommon/files.h
-    ${PARENT_DIR}/qcommon/huffman.c
-    ${PARENT_DIR}/qcommon/ioapi.c
-    ${PARENT_DIR}/qcommon/md4.c
-    ${PARENT_DIR}/qcommon/md5.c
-    ${PARENT_DIR}/qcommon/msg.c
-    ${PARENT_DIR}/qcommon/net_chan.c
-    ${PARENT_DIR}/qcommon/net_ip.c
-    ${PARENT_DIR}/qcommon/parse.c
-    ${PARENT_DIR}/qcommon/puff.c
+    ${PARENT_DIR}/qcommon/huffman.cpp
+    ${PARENT_DIR}/qcommon/huffman.h
+    ${PARENT_DIR}/qcommon/ioapi.cpp
+    ${PARENT_DIR}/qcommon/md4.cpp
+    ${PARENT_DIR}/qcommon/md5.cpp
+    ${PARENT_DIR}/qcommon/msg.cpp
+    ${PARENT_DIR}/qcommon/msg.h
+    ${PARENT_DIR}/qcommon/net_chan.cpp
+    ${PARENT_DIR}/qcommon/net_ip.cpp
+    ${PARENT_DIR}/qcommon/net.h
+    ${PARENT_DIR}/qcommon/parse.cpp
+    ${PARENT_DIR}/qcommon/puff.cpp
     ${PARENT_DIR}/qcommon/q_shared.c
     ${PARENT_DIR}/qcommon/q3_lauxlib.cpp
     ${PARENT_DIR}/qcommon/q_math.c
-    ${PARENT_DIR}/qcommon/unzip.c
-    ${PARENT_DIR}/qcommon/vm.c
-    ${PARENT_DIR}/qcommon/vm_interpreted.c
-    ${PARENT_DIR}/qcommon/vm_x86.c
+    ${PARENT_DIR}/qcommon/unzip.cpp
+    ${PARENT_DIR}/qcommon/vm.cpp
+    ${PARENT_DIR}/qcommon/vm_interpreted.cpp
+    ${PARENT_DIR}/qcommon/vm_x86.cpp
     #
-    ${PARENT_DIR}/sdl/sdl_input.c
-    ${PARENT_DIR}/sdl/sdl_snd.c
+    ${PARENT_DIR}/sdl/sdl_input.cpp
+    ${PARENT_DIR}/sdl/sdl_snd.cpp
     #
-    ${PARENT_DIR}/server/sv_ccmds.c
-    ${PARENT_DIR}/server/sv_client.c
-    ${PARENT_DIR}/server/sv_game.c
-    ${PARENT_DIR}/server/sv_init.c
-    ${PARENT_DIR}/server/sv_main.c
-    ${PARENT_DIR}/server/sv_net_chan.c
-    ${PARENT_DIR}/server/sv_snapshot.c
-    ${PARENT_DIR}/server/sv_world.c
+    ${PARENT_DIR}/server/sv_ccmds.cpp
+    ${PARENT_DIR}/server/sv_client.cpp
+    ${PARENT_DIR}/server/sv_game.cpp
+    ${PARENT_DIR}/server/sv_init.cpp
+    ${PARENT_DIR}/server/sv_main.cpp
+    ${PARENT_DIR}/server/sv_net_chan.cpp
+    ${PARENT_DIR}/server/sv_snapshot.cpp
+    ${PARENT_DIR}/server/sv_world.cpp
     #
-    ${PARENT_DIR}/sys/con_log.c
-    ${PARENT_DIR}/sys/con_tty.c
+    ${PARENT_DIR}/sys/con_log.cpp
+    ${PARENT_DIR}/sys/con_tty.cpp
     ${PARENT_DIR}/sys/sys_main.cpp
-    ${PARENT_DIR}/sys/sys_unix.c
+    ${PARENT_DIR}/sys/sys_unix.cpp
+    ${PARENT_DIR}/sys/sys_shared.h
     ${APPLE_SOURCES}
+
+    ${EXTERNAL_DIR}/semver/src/lib/semantic_version_v1.cpp
+    ${EXTERNAL_DIR}/semver/src/lib/semantic_version_v2.cpp
     )
 
 if(APPLE)
@@ -153,18 +158,20 @@ target_link_libraries(
 
 include_directories(
     ${PARENT_DIR}
-    ${PARENT_DIR}/zlib
     ${PARENT_DIR}/qcommon
-    ${PARENT_DIR}/restclient
-    ${PARENT_DIR}/rapidjson
-    ${PARENT_DIR}/SDL2/include
-    ${PARENT_DIR}/jpeg-8c
-    ${PARENT_DIR}/libogg-1.3.1/include
-    ${PARENT_DIR}/lua-5.3.3/include
-    ${PARENT_DIR}/sol
-    ${PARENT_DIR}/nettle-3.3
-    ${PARENT_DIR}/opus-1.1/include
-    ${PARENT_DIR}/opusfile-0.5/include
+    ${EXTERNAL_DIR}/zlib
+    ${EXTERNAL_DIR}/restclient
+    ${EXTERNAL_DIR}/rapidjson
+    ${EXTERNAL_DIR}/SDL2/include
+    ${EXTERNAL_DIR}/jpeg-8c
+    ${EXTERNAL_DIR}/libogg-1.3.2/include
+    ${EXTERNAL_DIR}/lua-5.3.3/include
+    ${EXTERNAL_DIR}/sol
+    ${EXTERNAL_DIR}/nettle-3.3
+    ${EXTERNAL_DIR}/opus-1.1.4/include
+    ${EXTERNAL_DIR}/opusfile-0.8/include
+    ${EXTERNAL_DIR}/restclient
+    ${EXTERNAL_DIR}/semver/src/include
     ${SDL2_INCLUDE_DIRS}
     ${OPENAL_INCLUDE_DIR}
     )
@@ -174,7 +181,7 @@ if (USE_INTERNAL_SDL2)
 add_custom_command(
     TARGET tremulous
     POST_BUILD COMMAND ${CMAKE_COMMAND}
-    ARGS -E copy ${CMAKE_SOURCE_DIR}/src/SDL2/libs/Darwin/libSDL2-2.0.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libSDL2-2.0.0.dylib
+    ARGS -E copy ${CMAKE_SOURCE_DIR}/external/SDL2/libs/Darwin/libSDL2-2.0.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libSDL2-2.0.0.dylib
     )
 endif(USE_INTERNAL_SDL2)
 

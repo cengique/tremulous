@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -21,10 +22,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#include "../../qcommon/q_platform.h"
+#include "qcommon/q_platform.h"
+
 #include "cmdlib.h"
 #include "mathlib.h"
-#include "../../qcommon/qfiles.h"
+#include "qfiles.h"
 
 /* 19079 total symbols in FI, 2002 Jan 23 */
 #define DEFAULT_HASHTABLE_SIZE 2048
@@ -1645,4 +1647,3 @@ Motivation: not wanting to scrollback for pages to find asm error.
 
 	return errorCount;
 }
-

@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -43,7 +44,7 @@ void S_RawSamples(int stream, int samples, int rate, int width, int channels,
 void S_StopAllSounds( void );
 
 // all continuous looping sounds must be added before calling S_Update
-void S_ClearLoopingSounds( qboolean killall );
+void S_ClearLoopingSounds( bool killall );
 void S_AddLoopingSound( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
 void S_AddRealLoopingSound( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
 void S_StopLoopingSound(int entityNum );
@@ -64,7 +65,7 @@ void S_BeginRegistration( void );
 // RegisterSound will allways return a valid sample, even if it
 // has to create a placeholder.  This prevents continuous filesystem
 // checks for missing files
-sfxHandle_t	S_RegisterSound( const char *sample, qboolean compressed );
+sfxHandle_t	S_RegisterSound( const char *sample, bool compressed );
 
 int S_SoundDuration( sfxHandle_t handle );
 

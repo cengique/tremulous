@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -23,10 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // cg_main.c -- initialization and primary entry point for cgame
 
-
 #include "cg_local.h"
+#include "ui/ui_shared.h"
 
-#include "../ui/ui_shared.h"
 // display context for new ui stuff
 displayContextDef_t cgDC;
 
@@ -86,6 +86,9 @@ Q_EXPORT intptr_t vmMain( int command, int arg0, int arg1, int arg2 )
 #ifndef MODULE_INTERFACE_11
     case CG_VOIP_STRING:
       return (intptr_t)CG_VoIPString( );
+
+    case CG_CONSOLE_COMPLETARGUMENT:
+      return CG_Console_CompleteArgument( arg0 );
 #endif
 
     default:
@@ -369,7 +372,7 @@ static cvarTable_t cvarTable[ ] =
   // but we also reference them here
 
   { &cg_paused, "cl_paused", "0", CVAR_ROM },
-  { &cg_blood, "com_blood", "1", CVAR_ARCHIVE },
+  { &cg_blood, "cg_blood", "1", CVAR_ARCHIVE },
   { &cg_synchronousClients, "g_synchronousClients", "0", 0 }, // communicated by systeminfo
   { &cg_timescaleFadeEnd, "cg_timescaleFadeEnd", "1", CVAR_CHEAT },
   { &cg_timescaleFadeSpeed, "cg_timescaleFadeSpeed", "0", CVAR_CHEAT },

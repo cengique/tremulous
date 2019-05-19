@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -20,7 +21,6 @@ along with Tremulous; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-
 
 #include "cg_local.h"
 
@@ -894,7 +894,7 @@ static void CG_BuildableStatusDisplay( centity_t *cent )
 
   // center point
   origin[ 2 ] += mins[ 2 ];
-  origin[ 2 ] += ( abs( mins[ 2 ] ) + abs( maxs[ 2 ] ) ) / 2;
+  origin[ 2 ] += ( fabs( mins[ 2 ] ) + fabs( maxs[ 2 ] ) ) / 2;
 
   entNum = cg.predictedPlayerState.clientNum;
 

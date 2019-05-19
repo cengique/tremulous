@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 2007-2008 Amanieu d'Antras (amanieu@gmail.com)
 Copyright (C) 2015-2016 Jeff Kent (jeff@jkent.net)
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -23,9 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifndef __CRYPTO_H__
 #define __CRYPTO_H__
-
-#include "q_shared.h"
-#include "qcommon.h"
 
 #include "nettle/bignum.h"
 #include "nettle/buffer.h"

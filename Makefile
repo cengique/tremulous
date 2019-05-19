@@ -11,6 +11,13 @@ ifeq ($(COMPILE_PLATFORM),sunos)
   COMPILE_ARCH=$(shell uname -p | sed -e 's/i.86/x86/')
 endif
 
+ifeq ($(COMPILE_PLATFORM),linux)
+  ifeq ($(COMPILE_ARCH),arm)
+    # Get full arch name
+  COMPILE_ARCH=$(shell file /bin/true | sed -e 's/^.*ld-linux-\(arm.*\)\.so.*/\1/')
+  endif
+endif
+
 ifndef BUILD_STANDALONE
   BUILD_STANDALONE =
 endif
@@ -19,6 +26,9 @@ ifndef BUILD_CLIENT
 endif
 ifndef BUILD_SERVER
   BUILD_SERVER     =
+endif
+ifndef BUILD_GRANGER
+  BUILD_GRANGER    =
 endif
 ifndef BUILD_GAME_SO
   BUILD_GAME_SO    =
@@ -98,7 +108,7 @@ endif
 export CROSS_COMPILING
 
 ifndef VERSION
-VERSION=1.2.0
+VERSION=1.3.0
 endif
 
 ifndef CLIENTBIN
@@ -113,10 +123,7 @@ ifndef BASEGAME
 BASEGAME=gpp
 endif
 
-
-ifndef BASEGAME_CFLAGS
-BASEGAME_CFLAGS=
-endif
+BASEGAME_CFLAGS=-I../../${MOUNT_DIR}
 
 ifndef COPYDIR
 COPYDIR="/usr/local/games/tremulous"
@@ -128,6 +135,10 @@ endif
 
 ifndef MOUNT_DIR
 MOUNT_DIR=src
+endif
+
+ifndef EXTERNAL_DIR
+EXTERNAL_DIR=external
 endif
 
 ifndef ASSETS_DIR
@@ -173,7 +184,7 @@ ifndef USE_CURL_DLOPEN
 endif
 
 ifndef USE_CODEC_VORBIS
-USE_CODEC_VORBIS=0
+USE_CODEC_VORBIS=1
 endif
 
 ifndef USE_CODEC_OPUS
@@ -181,11 +192,11 @@ USE_CODEC_OPUS=1
 endif
 
 ifndef USE_MUMBLE
-USE_MUMBLE=1
+USE_MUMBLE=0
 endif
 
 ifndef USE_VOIP
-USE_VOIP=1
+USE_VOIP=0
 endif
 
 ifndef USE_FREETYPE
@@ -236,10 +247,15 @@ ifndef DEBUG_CFLAGS
 DEBUG_CFLAGS=-ggdb -O0
 endif
 
+ifndef BASE_CFLAGS
+ BASE_CFLAGS=-fno-strict-aliasing
+endif
+
 #############################################################################
 
 BD=$(BUILD_DIR)/debug-$(PLATFORM)-$(ARCH)
 BR=$(BUILD_DIR)/release-$(PLATFORM)-$(ARCH)
+
 CDIR=$(MOUNT_DIR)/client
 SDIR=$(MOUNT_DIR)/server
 RCOMMONDIR=$(MOUNT_DIR)/renderercommon
@@ -254,24 +270,27 @@ GDIR=$(MOUNT_DIR)/game
 CGDIR=$(MOUNT_DIR)/cgame
 NDIR=$(MOUNT_DIR)/null
 UIDIR=$(MOUNT_DIR)/ui
-JPDIR=$(MOUNT_DIR)/jpeg-8c
-OGGDIR=$(MOUNT_DIR)/libogg-1.3.1
-VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.4
-OPUSDIR=$(MOUNT_DIR)/opus-1.1
-OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.5
-ZDIR=$(MOUNT_DIR)/zlib
-LUADIR=$(MOUNT_DIR)/lua-5.3.3/src
 GRANGERDIR=$(MOUNT_DIR)/granger/src
-RESTDIR=$(MOUNT_DIR)/restclient
-NETTLEDIR=$(MOUNT_DIR)/nettle-3.3
+JPDIR=$(EXTERNAL_DIR)/jpeg-8c
+OGGDIR=$(EXTERNAL_DIR)/libogg-1.3.2
+VORBISDIR=$(EXTERNAL_DIR)/libvorbis-1.3.5
+OPUSDIR=$(EXTERNAL_DIR)/opus-1.1.4
+OPUSFILEDIR=$(EXTERNAL_DIR)/opusfile-0.8
+ZDIR=$(EXTERNAL_DIR)/zlib
+LUADIR=$(EXTERNAL_DIR)/lua-5.3.3/src
+RESTDIR=$(EXTERNAL_DIR)/restclient
+NETTLEDIR=$(EXTERNAL_DIR)/nettle-3.3
+SEMVERDIR=$(EXTERNAL_DIR)/semver
 LUA_RAPIDJSONDIR=$(MOUNT_DIR)/script/rapidjson
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
 LBURGDIR=$(MOUNT_DIR)/tools/lcc/lburg
 Q3CPPDIR=$(MOUNT_DIR)/tools/lcc/cpp
 Q3LCCETCDIR=$(MOUNT_DIR)/tools/lcc/etc
 Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
-SDLHDIR=$(MOUNT_DIR)/SDL2
-LIBSDIR=$(MOUNT_DIR)/libs
+SDLHDIR=$(EXTERNAL_DIR)/SDL2
+CURLHDIR=$(EXTERNAL_DIR)/libcurl-7.35.0
+ALHDIR=$(EXTERNAL_DIR)/AL
+LIBSDIR=$(EXTERNAL_DIR)/libs
 TEMPDIR=/tmp
 
 bin_path=$(shell which $(1) 2> /dev/null)
@@ -304,9 +323,9 @@ endif
 # Add git version info
 USE_GIT=
 ifeq ($(wildcard .git),.git)
-  GIT_REV=$(shell git show -s --pretty=format:%h-%ad --date=short)
+  GIT_REV=$(shell git describe --tag)
   ifneq ($(GIT_REV),)
-    VERSION:=$(VERSION)-$(GIT_REV)
+    VERSION:=$(GIT_REV)
     USE_GIT=1
   endif
 endif
@@ -321,13 +340,8 @@ MKDIR=mkdir
 EXTRA_FILES=
 CLIENT_EXTRA_FILES=
 
-ifneq (,$(findstring "$(COMPILE_PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
-  TOOLS_CFLAGS += -DARCH_STRING=\"$(COMPILE_ARCH)\"
-endif
-
 ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
-    -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\"
+  BASE_CFLAGS += -DUSE_ICON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
 
   OPTIMIZEVM = -O3
@@ -335,12 +349,12 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 
   ifeq ($(ARCH),x86_64)
     OPTIMIZEVM = -O3
-    OPTIMIZE = $(OPTIMIZEVM) -ffast-math
+    OPTIMIZE = $(OPTIMIZEVM) -ffast-math -msse2
     HAVE_VM_COMPILED = true
   else
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i586
-    OPTIMIZE = $(OPTIMIZEVM) -ffast-math
+    OPTIMIZEVM = -O3
+    OPTIMIZE = $(OPTIMIZEVM) -ffast-math -msse2 -mfpmath=387+sse
     HAVE_VM_COMPILED=true
   else
   ifeq ($(ARCH),ppc)
@@ -360,6 +374,9 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
     # According to http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=410555
     # -ffast-math will cause the client to die with SIGFPE on Alpha
     OPTIMIZE = $(OPTIMIZEVM)
+  endif
+  ifeq ($(ARCH),armhf)
+    BASE_CFLAGS += -D__armhf__
   endif
   endif
   endif
@@ -432,13 +449,13 @@ ifeq ($(PLATFORM),darwin)
     BASE_CFLAGS += -arch ppc64 -faltivec
   endif
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM += -march=prescott -mfpmath=sse
+    OPTIMIZEVM += -mfpmath=387+sse
     # x86 vm will crash without -mstackrealign since MMX instructions will be
     # used no matter what and they corrupt the frame pointer in VM calls
     BASE_CFLAGS += -arch i386 -m32 -mstackrealign
   endif
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM += -arch x86_64 -mfpmath=sse
+    OPTIMIZEVM += -arch x86_64 -mfpmath=sse -msse2
   endif
 
   # When compiling on OSX for OSX, we're not cross compiling as far as the
@@ -462,7 +479,7 @@ ifeq ($(PLATFORM),darwin)
     endif
   endif
 
-  BASE_CFLAGS += -fno-strict-aliasing -fno-common -pipe
+  BASE_CFLAGS += -fno-strict-aliasing -fno-common
 
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
@@ -483,7 +500,7 @@ ifeq ($(PLATFORM),darwin)
   #  1. IF you try, this Makefile will still drop libSDL-2.0.0.dylib into the builddir
   #  2. Debugger warns that you have 2- which one will be used is undefined
   ifeq ($(USE_LOCAL_HEADERS),1)
-    BASE_CFLAGS += -I$(SDLHDIR)/include
+    BASE_CFLAGS += -I$(SDLHDIR)/include -I$(CURLHDIR) -I$(ALHDIR)
   endif
 
   # We copy sdlmain before ranlib'ing it so that subversion doesn't think
@@ -532,17 +549,14 @@ ifdef MINGW
     endif
 
     ifndef CC
-      CC=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
-         $(call bin_path, $(MINGW_PREFIX)-gcc))))
+      CC=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), $(call bin_path, $(MINGW_PREFIX)-gcc))))
     endif
     ifndef CXX
-      CXX=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
-         $(call bin_path, $(MINGW_PREFIX)-g++))))
+      CXX=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), $(call bin_path, $(MINGW_PREFIX)-g++))))
     endif
 
     ifndef WINDRES
-      WINDRES=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
-         $(call bin_path, $(MINGW_PREFIX)-windres))))
+      WINDRES=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), $(call bin_path, $(MINGW_PREFIX)-windres))))
     endif
   else
     # Some MinGW installations define CC to cc, but don't actually provide cc,
@@ -572,8 +586,7 @@ ifdef MINGW
   LDFLAGS += -static -static-libgcc -static-libstdc++
   GRANGER_CFLAGS = -D_CRT_SECURE_NO_WARNINGS
 
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
-    -DUSE_ICON
+  BASE_CFLAGS += -DUSE_ICON
 
   # In the absence of wspiapi.h, require Windows XP or later
   ifeq ($(shell test -e $(CMDIR)/wspiapi.h; echo $$?),1)
@@ -586,18 +599,21 @@ ifdef MINGW
     ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LDFLAGS += $(OPENAL_LDFLAGS)
     endif
+    ifeq ($(USE_LOCAL_HEADERS),1)
+    CLIENT_CFLAGS += -I$(ALHDIR) 
+    endif
   endif
 
   ifeq ($(ARCH),x86_64)
     OPTIMIZEVM = -O3
-    OPTIMIZE = $(OPTIMIZEVM) -ffast-math
+    OPTIMIZE = $(OPTIMIZEVM) -ffast-math -msse2
     HAVE_VM_COMPILED = true
     BASE_CFLAGS += -m64
   endif
 
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i686
-    OPTIMIZE = $(OPTIMIZEVM) -ffast-math
+    OPTIMIZEVM = -O3
+    OPTIMIZE = $(OPTIMIZEVM) -ffast-math -msse2 -mfpmath=387+sse
     HAVE_VM_COMPILED = true
     BASE_CFLAGS += -m32
   endif
@@ -634,7 +650,7 @@ ifdef MINGW
     CLIENT_CFLAGS += $(CURL_CFLAGS)
     ifneq ($(USE_CURL_DLOPEN),1)
       ifeq ($(USE_LOCAL_HEADERS),1)
-        CLIENT_CFLAGS += -DCURL_STATICLIB
+        CLIENT_CFLAGS += -DCURL_STATICLIB -I$(CURLHDIR)
         ifeq ($(ARCH),x86_64)
           CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a
         else
@@ -653,17 +669,13 @@ ifdef MINGW
   ifeq ($(USE_LOCAL_HEADERS),1)
     CLIENT_CFLAGS += -I$(SDLHDIR)/include
     ifeq ($(ARCH), x86)
-      CLIENT_LIBS += $(LIBSDIR)/win32/libSDL2main.a \
-                        $(LIBSDIR)/win32/libSDL2.dll.a
-      RENDERER_LIBS += $(LIBSDIR)/win32/libSDL2main.a \
-                        $(LIBSDIR)/win32/libSDL2.dll.a
+      CLIENT_LIBS += $(LIBSDIR)/win32/libSDL2main.a $(LIBSDIR)/win32/libSDL2.dll.a
+      RENDERER_LIBS += $(LIBSDIR)/win32/libSDL2main.a $(LIBSDIR)/win32/libSDL2.dll.a
       SDLDLL=SDL2.dll
       CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/SDL2.dll
     else
-      CLIENT_LIBS += $(LIBSDIR)/win64/libSDL264main.a \
-                        $(LIBSDIR)/win64/libSDL264.dll.a
-      RENDERER_LIBS += $(LIBSDIR)/win64/libSDL264main.a \
-                        $(LIBSDIR)/win64/libSDL264.dll.a
+      CLIENT_LIBS += $(LIBSDIR)/win64/libSDL264main.a  $(LIBSDIR)/win64/libSDL264.dll.a
+      RENDERER_LIBS += $(LIBSDIR)/win64/libSDL264main.a $(LIBSDIR)/win64/libSDL264.dll.a
       SDLDLL=SDL264.dll
       CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/SDL264.dll
     endif
@@ -684,8 +696,7 @@ ifeq ($(PLATFORM),freebsd)
 
   # flags
   BASE_CFLAGS = $(shell env MACHINE_ARCH=$(ARCH) make -f /dev/null -VCFLAGS) \
-    -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
-    -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
+    -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
   HAVE_VM_COMPILED = true
 
@@ -735,193 +746,6 @@ ifeq ($(PLATFORM),freebsd)
 else # ifeq freebsd
 
 #############################################################################
-# SETUP AND BUILD -- OPENBSD
-#############################################################################
-
-ifeq ($(PLATFORM),openbsd)
-
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
-    -pipe -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
-  CLIENT_CFLAGS += $(SDL_CFLAGS)
-
-  OPTIMIZEVM = -O3
-  OPTIMIZE = $(OPTIMIZEVM) -ffast-math
-
-  ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3
-    OPTIMIZE = $(OPTIMIZEVM) -ffast-math
-    HAVE_VM_COMPILED = true
-  else
-  ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i586
-    OPTIMIZE = $(OPTIMIZEVM) -ffast-math
-    HAVE_VM_COMPILED=true
-  else
-  ifeq ($(ARCH),ppc)
-    BASE_CFLAGS += -maltivec
-    HAVE_VM_COMPILED=true
-  endif
-  ifeq ($(ARCH),ppc64)
-    BASE_CFLAGS += -maltivec
-    HAVE_VM_COMPILED=true
-  endif
-  ifeq ($(ARCH),sparc64)
-    OPTIMIZE += -mtune=ultrasparc3 -mv8plus
-    OPTIMIZEVM += -mtune=ultrasparc3 -mv8plus
-    HAVE_VM_COMPILED=true
-  endif
-  ifeq ($(ARCH),alpha)
-    # According to http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=410555
-    # -ffast-math will cause the client to die with SIGFPE on Alpha
-    OPTIMIZE = $(OPTIMIZEVM)
-  endif
-  endif
-  endif
-
-  ifeq ($(USE_CURL),1)
-    CLIENT_CFLAGS += $(CURL_CFLAGS)
-    USE_CURL_DLOPEN=0
-  endif
-
-  # no shm_open on OpenBSD
-  USE_MUMBLE=0
-
-  SHLIBEXT=so
-  SHLIBCFLAGS=-fPIC
-  #SHLIBLDFLAGS=-shared $(LDFLAGS)
-  SHLIBLDFLAGS=-shared 
-
-  THREAD_LIBS=-lpthread
-  LIBS=-lm
-  GRANGER_LIBS=-lm
-
-  CLIENT_LIBS =
-
-  CLIENT_LIBS += $(SDL_LIBS)
-  RENDERER_LIBS = $(SDL_LIBS) -lGL
-
-  ifeq ($(USE_OPENAL),1)
-    ifneq ($(USE_OPENAL_DLOPEN),1)
-      CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
-    endif
-  endif
-
-  ifeq ($(USE_CURL),1)
-    ifneq ($(USE_CURL_DLOPEN),1)
-      CLIENT_LIBS += $(CURL_LIBS)
-    endif
-  endif
-else # ifeq openbsd
-
-#############################################################################
-# SETUP AND BUILD -- NETBSD
-#############################################################################
-
-ifeq ($(PLATFORM),netbsd)
-
-  LIBS=-lm
-  GRANGER_LIBS=-lm
-  SHLIBEXT=so
-  SHLIBCFLAGS=-fPIC
-  SHLIBLDFLAGS=-shared $(LDFLAGS)
-  THREAD_LIBS=-lpthread
-
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
-
-  ifeq ($(ARCH),x86)
-    HAVE_VM_COMPILED=true
-  endif
-
-  BUILD_CLIENT = 0
-else # ifeq netbsd
-
-#############################################################################
-# SETUP AND BUILD -- IRIX
-#############################################################################
-
-ifeq ($(PLATFORM),irix64)
-  LIB=lib
-
-  ARCH=mips
-
-  CC = c99
-  MKDIR = mkdir -p
-
-  BASE_CFLAGS=-Dstricmp=strcasecmp -Xcpluscomm -woff 1185 \
-    -I. -I$(ROOT)/usr/include
-  CLIENT_CFLAGS += $(SDL_CFLAGS)
-  OPTIMIZE = -O3
-
-  SHLIBEXT=so
-  SHLIBCFLAGS=
-  SHLIBLDFLAGS=-shared
-
-  LIBS=-ldl -lm -lgen
-  GRANGER_LIBS=-ldl -lm -lgen
-  # FIXME: The X libraries probably aren't necessary?
-  CLIENT_LIBS=-L/usr/X11/$(LIB) $(SDL_LIBS) \
-    -lX11 -lXext -lm
-  RENDERER_LIBS = $(SDL_LIBS) -lGL
-
-else # ifeq IRIX
-
-#############################################################################
-# SETUP AND BUILD -- SunOS
-#############################################################################
-
-ifeq ($(PLATFORM),sunos)
-
-  CC=gcc
-  INSTALL=ginstall
-  MKDIR=gmkdir
-  COPYDIR="/usr/local/share/games/tremulous"
-
-  ifneq ($(ARCH),x86)
-    ifneq ($(ARCH),sparc)
-      $(error arch $(ARCH) is currently not supported)
-    endif
-  endif
-
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
-    -pipe -DUSE_ICON
-  CLIENT_CFLAGS += $(SDL_CFLAGS)
-
-  OPTIMIZEVM = -O3 -funroll-loops
-
-  ifeq ($(ARCH),sparc)
-    OPTIMIZEVM += -O3 \
-      -fstrength-reduce -falign-functions=2 \
-      -mtune=ultrasparc3 -mv8plus -mno-faster-structs
-    HAVE_VM_COMPILED=true
-  else
-  ifeq ($(ARCH),x86)
-    OPTIMIZEVM += -march=i586 -fomit-frame-pointer \
-      -falign-functions=2 -fstrength-reduce
-    HAVE_VM_COMPILED=true
-    BASE_CFLAGS += -m32
-    CLIENT_CFLAGS += -I/usr/X11/include/NVIDIA
-    CLIENT_LDFLAGS += -L/usr/X11/lib/NVIDIA -R/usr/X11/lib/NVIDIA
-  endif
-  endif
-
-  OPTIMIZE = $(OPTIMIZEVM) -ffast-math
-
-  SHLIBEXT=so
-  SHLIBCFLAGS=-fPIC
-  SHLIBLDFLAGS=-shared $(LDFLAGS)
-
-  THREAD_LIBS=-lpthread
-  LIBS=-lsocket -lnsl -ldl -lm
-  GRANGER_LIBS=-ldl -lm
-
-  BOTCFLAGS=-O0
-
-  CLIENT_LIBS +=$(SDL_LIBS) -lX11 -lXext -liconv -lm
-  RENDERER_LIBS = $(SDL_LIBS) -lGL
-
-else # ifeq sunos
-
-#############################################################################
 # SETUP AND BUILD -- GENERIC
 #############################################################################
   BASE_CFLAGS=
@@ -935,10 +759,6 @@ endif #Linux
 endif #darwin
 endif #MINGW
 endif #FreeBSD
-endif #OpenBSD
-endif #NetBSD
-endif #IRIX
-endif #SunOS
 
 ifndef CC
   CC=gcc
@@ -993,14 +813,14 @@ ifneq ($(BUILD_GAME_QVM),0)
     $(B)/$(BASEGAME)/vm/cgame.qvm \
     $(B)/$(BASEGAME)/vm/game.qvm \
     $(B)/$(BASEGAME)/vm/ui.qvm \
-	$(B)/$(BASEGAME)/vms-$(VERSION).pk3
+	$(B)/$(BASEGAME)/vms-gpp-$(VERSION).pk3
 endif
 
 ifneq ($(BUILD_GAME_QVM_11),0)
   TARGETS += \
     $(B)/$(BASEGAME)_11/vm/cgame.qvm \
     $(B)/$(BASEGAME)_11/vm/ui.qvm \
-	$(B)/$(BASEGAME)_11/vms-$(VERSION).pk3
+	$(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3
 endif
 
 ifneq ($(BUILD_DATA_PK3),0)
@@ -1035,7 +855,7 @@ endif
 
 ifeq ($(NEED_OPUS),1)
   ifeq ($(USE_INTERNAL_OPUS),1)
-    OPUS_CFLAGS = -DOPUS_BUILD -DHAVE_LRINTF -DFLOATING_POINT -DUSE_ALLOCA \
+    OPUS_CFLAGS = -DOPUS_BUILD -DHAVE_LRINTF -DFLOATING_POINT -DFLOAT_APPROX -DUSE_ALLOCA -D __OPTIMIZE__ \
       -I$(OPUSDIR)/include -I$(OPUSDIR)/celt -I$(OPUSDIR)/silk \
       -I$(OPUSDIR)/silk/float -I$(OPUSFILEDIR)/include
   else
@@ -1142,11 +962,6 @@ else
 endif
 
 BASE_CFLAGS += -DPRODUCT_VERSION=\\\"$(VERSION)\\\"
-BASE_CFLAGS += -Wformat=2 -Wno-format-zero-length -Wformat-security -Wno-format-nonliteral
-BASE_CFLAGS += -Wstrict-aliasing=2 -Wmissing-format-attribute
-BASE_CFLAGS += -Wdisabled-optimization
-BASE_CFLAGS += -Werror-implicit-function-declaration
-
 
 ifeq ($(V),1)
 echo_cmd=@:
@@ -1157,16 +972,13 @@ Q=@
 endif
 
 EXEC_CC = $(CC) ${1} -o ${2} -c ${3}
-#LOG_CC = $(file >>$(B)/compile_commands.txt,{ "target": "${1}", "directory": "$(shell pwd)/$(shell dirname $3)", "command": "${CC} ${2} -o ${3} -c ${4}", "file": "$(shell pwd)/${4}", "relative_file": "${4}" })
-
 EXEC_CXX = $(CXX) -std=c++1y ${CXXFLAGS} ${1} -o ${2} -c ${3}
-#LOG_CXX = $(file >>$(B)/compile_commands.txt,{ "target": "${1}", "directory": "$(shell pwd)/$(shell dirname $3)", "command": "${CXX} ${2} -o ${3} -c ${4}", "file": "$(shell pwd)/${4}", "relative_file": "${4}"})
 
 # TREMULOUS CLIENT
 CC_FLAGS=${NOTSHLIBCFLAGS} ${CFLAGS} ${CLIENT_CFLAGS} ${OPTIMIZE}
 define DO_CC
 $(echo_cmd) "CC $<"
-$(Q)$(call EXEC_CC,${CC_FLAGS},'$@','$<')
+$(Q)$(call EXEC_CC,-std=gnu99 ${CC_FLAGS},'$@','$<')
 $(Q)$(call LOG_CC,tremulous,${CC_FLAGS},$@,$<)
 endef
 
@@ -1184,6 +996,11 @@ define DO_RENDERER_COMMON_CC
 $(echo_cmd) "RENDERER_COMMON_CC $<"
 $(Q)$(call EXEC_CC,${REF_CC_FLAGS},'$@','$<')
 $(Q)$(call LOG_CC,renderer_common,${REF_CC_FLAGS},$@,$<)
+endef
+define DO_RENDERER_COMMON_CXX
+$(echo_cmd) "RENDERER_COMMON_CXX $<"
+$(Q)$(call EXEC_CXX,${REF_CC_FLAGS},'$@','$<')
+$(Q)$(call LOG_CXX,renderer_common,${REF_CC_FLAGS},$@,$<)
 endef
 ##########################################
 # Renderers
@@ -1208,6 +1025,11 @@ define DO_RENDERERGL2_CC
 $(echo_cmd) "GL2_RENDERER_CC $<"
 $(Q)$(call EXEC_CC,${REF_CC_FLAGS},'$@','$<')
 $(Q)$(call LOG_CC,opengl2,${REF_CC_FLAGS},$@,$<)
+endef
+define DO_RENDERERGL2_CXX
+$(echo_cmd) "RENDERERGL2_CXX $<"
+$(Q)$(call EXEC_CXX,${REF_CC_FLAGS},'$@','$<')
+$(Q)$(call LOG_CXX,opengl2,${REF_CC_FLAGS},$@,$<)
 endef
 
 define DO_REF_STR
@@ -1270,7 +1092,7 @@ endef
 DED_CC_FLAGS=-DDEDICATED ${NOTSHLIBCFLAGS} ${CFLAGS} ${SERVER_CFLAGS} ${OPTIMIZE}
 define DO_DED_CC
 $(echo_cmd) "DED_CC $<"
-$(Q)$(call EXEC_CC,${DED_CC_FLAGS},'$@','$<')
+$(Q)$(call EXEC_CC,-std=gnu99 ${DED_CC_FLAGS},'$@','$<')
 $(Q)$(call LOG_CC,tremded,${DED_CC_FLAGS},$@,$<)
 endef
 
@@ -1403,7 +1225,7 @@ endif
 
 $(B).zip: $(TARGETS)
 ifeq ($(PLATFORM),darwin)
-	@("./make-macosx-app.sh" release $(ARCH); if [ "$$?" -eq 0 ] && [ -d "$(B)/Tremulous.app" ]; then rm -f $@; cd $(B) && zip --symlinks -r9 ../../$@ `find "Tremulous.app" -print | sed -e "s!$(B)/!!g"`; else rm -f $@; cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS); fi)
+	@("./make-macosx-app.sh" release $(ARCH); if [ "$$?" -eq 0 ] && [ -d "$(B)/Tremulous.app" ]; then rm -f $@; cd $(B) && zip --symlinks -r9 ../../$@ GPL COPYING CC `find "Tremulous.app" -print | sed -e "s!$(B)/!!g"`; else rm -f $@; cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS); fi)
 else
 	@rm -f $@
 	@(cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS))
@@ -1416,6 +1238,7 @@ makedirs:
 	@if [ ! -d $(B)/script ]; then $(MKDIR) $(B)/script;fi
 	@if [ ! -d $(B)/script/rapidjson ]; then $(MKDIR) $(B)/script/rapidjson;fi
 	@if [ ! -d $(B)/nettle ]; then $(MKDIR) $(B)/nettle;fi
+	@if [ ! -d $(B)/semver ]; then $(MKDIR) $(B)/semver;fi
 	@if [ ! -d $(B)/client ];then $(MKDIR) $(B)/client;fi
 	@if [ ! -d $(B)/client/opus ];then $(MKDIR) $(B)/client/opus;fi
 	@if [ ! -d $(B)/client/vorbis ];then $(MKDIR) $(B)/client/vorbis;fi
@@ -1465,6 +1288,7 @@ endif
 TOOLS_OPTIMIZE = -g -Wall -fno-strict-aliasing
 TOOLS_CFLAGS += $(TOOLS_OPTIMIZE) \
                 -DTEMPDIR=\"$(TEMPDIR)\" -DSYSTEM=\"\" \
+				-I$(MOUNT_DIR) \
                 -I$(Q3LCCSRCDIR) \
                 -I$(LBURGDIR)
 TOOLS_LIBS =
@@ -1512,7 +1336,7 @@ $(B)/tools/lburg/%.o: $(LBURGDIR)/%.c
 
 $(LBURG): $(LBURGOBJ)
 	$(echo_cmd) "LD $@"
-	$(Q)$(TOOLS_CC) $(TOOLS_CFLAGS) $(TOOLS_LDFLAGS) -o $@ $^ $(TOOLS_LIBS)
+	$(Q)$(TOOLS_CC) -std=gnu99 $(TOOLS_CFLAGS) $(TOOLS_LDFLAGS) -o $@ $^ $(TOOLS_LIBS)
 
 Q3RCCOBJ = \
   $(B)/tools/rcc/alloc.o \
@@ -1634,7 +1458,15 @@ $(Q3ASM): $(Q3ASMOBJ)
 # GRANGER
 #############################################################################
 
-GRANGER_CFLAGS += -Wall -Wextra -fPIC -fpic
+ifeq ($(ARCH),x86_64)
+    ARCHFLAG=-m64
+else
+ifeq ($(ARCH),x86)
+    ARCHFLAG=-m32
+endif
+endif
+
+GRANGER_CFLAGS += $(ARCHFLAG) -fPIC -fpic $(LUACFLAGS) 
 
 ifeq ($(PLATFORM),darwin)
 GRANGER_CFLAGS += -DLUA_USE_MACOSX
@@ -1711,11 +1543,17 @@ GRANGEROBJ = \
 
 define DO_GRANGER_CC
   $(echo_cmd) "GRANGER_CC $<"
-  $(Q)$(call EXEC_CC, ${GRANGER_CFLAGS} ${OPTIMIZE},'$@','$<')
-  $(Q)$(call LOG_CC,granger, ${GRANGER_CFLAGS} ${OPTIMIZE},$@,$<)
+  $(Q)$(call EXEC_CC,-std=gnu99 -DGRANGER ${GRANGER_CFLAGS} ${OPTIMIZE},'$@','$<')
+  $(Q)$(call LOG_CC,granger,-std=gnu99 ${GRANGER_CFLAGS} ${OPTIMIZE},$@,$<)
+endef
+
+ define DO_GRANGER_CPP
+  $(echo_cmd) "GRANGER_CC $<"
+  $(Q)$(call EXEC_CC,-std=gnu99 -DGRANGER ${GRANGER_CFLAGS} ${OPTIMIZE},'$@','$<')
+  $(Q)$(call LOG_CC,granger,-std=gnu99 ${GRANGER_CFLAGS} ${OPTIMIZE},$@,$<)
 endef
  
-$(B)/granger.dir/src/lua/%.o: $(GRANGERDIR)/lua/%.c
+$(B)/granger.dir/src/lua/%.o: $(LUADIR)/%.c
 	$(DO_GRANGER_CC)
 
 $(B)/granger.dir/src/premake/%.o: $(GRANGERDIR)/premake/%.c
@@ -1727,22 +1565,37 @@ $(B)/granger.dir/src/nettle/%.o: $(GRANGERDIR)/nettle/%.c
 $(B)/granger.dir/src/%.o: $(GRANGERDIR)/%.c
 	$(DO_GRANGER_CC)
 
+$(B)/granger.dir/src/%.o: $(GRANGERDIR)/%.cpp
+	$(DO_GRANGER_CPP)
+
 $(B)/granger$(FULLBINEXT): $(GRANGEROBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(LDFLAGS) -o $@ $(GRANGEROBJ) $(GRANGER_LIBS) 
 
+ifneq ($(BUILD_GRANGER),0)
 TARGETS += $(B)/granger$(FULLBINEXT)
+endif
 
 $(B)/scripts:
 	rsync -rupE --exclude=".*" scripts $(B)
 
 TARGETS += $(B)/scripts
 
+$(B)/GPL:
+	rsync GPL $(B)
+$(B)/COPYING:
+	rsync COPYING $(B)
+$(B)/CC:
+	rsync CC $(B)
+
+TARGETS += $(B)/GPL $(B)/COPYING $(B)/CC
+
 #############################################################################
 # LUA
 #############################################################################
 
-LUACFLAGS=-Wall -Wextra -fPIC -fpic
+#LUACFLAGS=-Wall -Wextra -fPIC -fpic
+LUACFLAGS= $(ARCHFLAG) -fPIC -fpic
 
 ifeq ($(PLATFORM),darwin)
 LUACFLAGS += -DLUA_USE_MACOSX
@@ -1793,7 +1646,7 @@ define DO_LUA_CC
   $(Q)$(call LOG_CC,lua,${LUACFLAGS} ${OPTIMIZE},$@,$<)
 endef
 
-LUACFLAGS += -I$(MOUNT_DIR)/lua-5.3.3/include
+LUACFLAGS += -I$(EXTERNAL_DIR)/lua-5.3.3/include -I$(EXTERNAL_DIR)/sol
 CFLAGS += $(LUACFLAGS)
 CXXFLAGS += $(LUACFLAGS)
 
@@ -1805,7 +1658,7 @@ $(B)/lua/%.o: $(LUADIR)/%.c
 # FIXME Disabled for the time being
 #############################################################################
 
-SCRIPT_INCLUDES=-Isrc/qcommon -Isrc/rapidjson -Isrc/sol -Isrc/nettle-3.3
+SCRIPT_INCLUDES=-I$(MOUNT_DIR) -I$(EXTERNAL_DIR)/rapidjson -I$(EXTERNAL_DIR)/sol -I$(EXTERNAL_DIR)/nettle-3.3
 define DO_SCRIPT_CXX
   $(echo_cmd) "SCRIPT_CXX $<"
   $(Q)$(call EXEC_CXX,${NOTSHLIBCFLAGS} ${SCRIPT_INCLUDES} ${LUACFLAGS} ${OPTIMIZE},'$@','$<')
@@ -1837,7 +1690,7 @@ $(B)/script/rapidjson/%.o: $(LUA_RAPIDJSONDIR)/%.cpp
 # Nettle
 #############################################################################
 
-NETTLECFLAGS=-Wall -Wextra -DLUA_COMPAT_5_2 -fPIC -fpic
+NETTLECFLAGS=$(ARCHFLAG) -fPIC -fpic
 
 define DO_NETTLE_CC
   $(echo_cmd) "NETTLE_CC $<"
@@ -1876,10 +1729,33 @@ CFLAGS += -I$(NETTLEDIR)
 $(B)/nettle/%.o: $(NETTLEDIR)/nettle/%.c
 	$(DO_NETTLE_CC)
 
+#############################################################################
+# Semver 
+#############################################################################
+
+SEMVERCFLAGS=$(ARCHFLAG) -fPIC -fpic -I$(SEMVERDIR)/src/include
+
+define DO_SEMVER_CXX
+  $(echo_cmd) "SEMVER_CC $<"
+  $(CXX) -std=c++1y ${CXXFLAGS} ${SEMVERCFLAGS} -o $@ -c $<
+endef
+
+SEMVEROBJ = \
+  $(B)/semver/semantic_version_v1.o \
+  $(B)/semver/semantic_version_v2.o
+
+CFLAGS += -I$(SEMVERDIR)/src/include
+
+$(B)/semver/%.o: $(SEMVERDIR)/src/lib/%.cpp
+	$(DO_SEMVER_CXX)
 
 #############################################################################
 # CLIENT/SERVER
 #############################################################################
+
+# FIXME: This should be CLIENT_INCLUDES and SERVER_INCLUDES to differentiate
+# from GRANGER_INCLUDES etc.
+CFLAGS += -I$(MOUNT_DIR)
 
 Q3OBJ = \
   $(B)/client/cl_cgame.o \
@@ -1967,7 +1843,7 @@ else
     $(B)/client/con_tty.o
 endif
 
-Q3OBJ += $(LUAOBJ) $(SCRIPTOBJ) $(NETTLEOBJ)
+Q3OBJ += $(LUAOBJ) $(SCRIPTOBJ) $(NETTLEOBJ) $(SEMVEROBJ)
 
 Q3R2OBJ = \
   $(B)/renderergl2/tr_animation.o \
@@ -2147,13 +2023,11 @@ ifeq ($(ARCH),x86)
   Q3OBJ += \
     $(B)/client/snd_mixa.o \
     $(B)/client/matha.o \
-    $(B)/client/snapvector.o \
-    $(B)/client/ftola.o
+    $(B)/client/snapvector.o
 endif
 ifeq ($(ARCH),x86_64)
   Q3OBJ += \
-    $(B)/client/snapvector.o \
-    $(B)/client/ftola.o
+    $(B)/client/snapvector.o
 endif
 
 ifeq ($(NEED_OPUS),1)
@@ -2355,15 +2229,14 @@ endif
 #-bbq
 ifeq ($(USE_RESTCLIENT),1)
   Q3OBJ += \
-  	$(B)/client/restclient/connection.o \
-  	$(B)/client/restclient/helpers.o \
-  	$(B)/client/restclient/restclient.o
+  $(B)/client/restclient/connection.o \
+  $(B)/client/restclient/helpers.o \
+  $(B)/client/restclient/restclient.o
 endif
 
 ifeq ($(HAVE_VM_COMPILED),true)
   ifneq ($(findstring $(ARCH),x86 x86_64),)
-    Q3OBJ += \
-      $(B)/client/vm_x86.o
+    Q3OBJ += $(B)/client/vm_x86.o
   endif
   ifneq ($(findstring $(ARCH),ppc ppc64),)
     Q3OBJ += $(B)/client/vm_powerpc.o $(B)/client/vm_powerpc_asm.o
@@ -2376,7 +2249,8 @@ endif
 ifdef MINGW
   Q3OBJ += \
     $(B)/client/win_resource.o \
-    $(B)/client/sys_win32.o
+    $(B)/client/sys_win32.o \
+    $(B)/client/sys_win32_default_homepath.o
 else
   Q3OBJ += \
     $(B)/client/sys_unix.o
@@ -2482,13 +2356,11 @@ Q3DOBJ = \
 ifeq ($(ARCH),x86)
   Q3DOBJ += \
       $(B)/ded/matha.o \
-      $(B)/ded/snapvector.o \
-      $(B)/ded/ftola.o
+      $(B)/ded/snapvector.o
 endif
 ifeq ($(ARCH),x86_64)
   Q3DOBJ += \
-      $(B)/ded/snapvector.o \
-      $(B)/ded/ftola.o
+      $(B)/ded/snapvector.o
 endif
 
 Q3DOBJ += $(LUAOBJ) $(SCRIPTOBJ) $(NETTLEOBJ)
@@ -2520,6 +2392,7 @@ ifdef MINGW
   Q3DOBJ += \
     $(B)/ded/win_resource.o \
     $(B)/ded/sys_win32.o \
+    $(B)/ded/sys_win32_default_homepath.o \
     $(B)/ded/con_win32.o
 else
   Q3DOBJ += \
@@ -2598,7 +2471,7 @@ CGOBJ11_ = \
   $(B)/$(BASEGAME)/cgame/bg_lib.o \
   $(B)/$(BASEGAME)/cgame/bg_alloc.o \
   $(B)/$(BASEGAME)/cgame/bg_voice.o \
-  $(B)/$(BASEGAME)/cgame/cg_consolecmds.o \
+  $(B)/$(BASEGAME)/11/cgame/cg_consolecmds.o \
   $(B)/$(BASEGAME)/cgame/cg_buildable.o \
   $(B)/$(BASEGAME)/cgame/cg_animation.o \
   $(B)/$(BASEGAME)/cgame/cg_animmapobj.o \
@@ -2738,10 +2611,10 @@ $(B)/$(BASEGAME)_11/vm/ui.qvm: $(UIVMOBJ11) $(UIDIR)/ui_syscalls_11.asm $(Q3ASM)
 ## QVM Package
 #############################################################################
 
-$(B)/$(BASEGAME)/vms-$(VERSION).pk3: $(B)/$(BASEGAME)/vm/ui.qvm $(B)/$(BASEGAME)/vm/cgame.qvm $(B)/$(BASEGAME)/vm/game.qvm
+$(B)/$(BASEGAME)/vms-gpp-$(VERSION).pk3: $(B)/$(BASEGAME)/vm/ui.qvm $(B)/$(BASEGAME)/vm/cgame.qvm $(B)/$(BASEGAME)/vm/game.qvm
 	@(cd $(B)/$(BASEGAME) && zip -r vms-$(VERSION).pk3 vm/)
 
-$(B)/$(BASEGAME)_11/vms-$(VERSION).pk3: $(B)/$(BASEGAME)_11/vm/ui.qvm $(B)/$(BASEGAME)_11/vm/cgame.qvm 
+$(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3: $(B)/$(BASEGAME)_11/vm/ui.qvm $(B)/$(BASEGAME)_11/vm/cgame.qvm 
 	@(cd $(B)/$(BASEGAME)_11 && zip -r vms-$(VERSION).pk3 vm/)
 
 
@@ -2782,9 +2655,6 @@ $(B)/client/%.o: $(SDIR)/%.cpp
 $(B)/client/%.o: $(CMDIR)/%.cpp
 	$(DO_CXX)
 
-$(B)/client/%.o: $(SPEEXDIR)/%.c
-	$(DO_CC)
-
 $(B)/client/%.o: $(OGGDIR)/src/%.c
 	$(DO_CC)
 
@@ -2812,14 +2682,17 @@ $(B)/client/%.o: $(ZDIR)/%.c
 $(B)/client/%.o: $(SDLDIR)/%.c
 	$(DO_CC)
 
+$(B)/client/%.o: $(SDLDIR)/%.cpp
+	$(DO_CXX)
+
 $(B)/client/%.o: $(SYSDIR)/%.c
 	$(DO_CC)
 
 $(B)/client/%.o: $(SYSDIR)/%.cpp
 	$(DO_CXX)
 
-$(B)/client/%.o: $(SYSDIR)/%.m
-	$(DO_CC)
+$(B)/client/%.o: $(SYSDIR)/%.mm
+	$(DO_CXX)
 
 #-wtf
 $(B)/client/restclient/%.o: $(RESTDIR)/%.cpp
@@ -2832,13 +2705,19 @@ $(B)/client/%.o: $(SYSDIR)/%.rc
 
 $(B)/renderercommon/%.o: $(SDLDIR)/%.c
 	$(DO_RENDERER_COMMON_CC)
+$(B)/renderercommon/%.o: $(SDLDIR)/%.cpp
+	$(DO_RENDERER_COMMON_CXX)
 $(B)/renderercommon/%.o: $(JPDIR)/%.c
 	$(DO_RENDERER_COMMON_CC)
 
 $(B)/renderergl1/%.o: $(RCOMMONDIR)/%.c
 	$(DO_RENDERER_COMMON_CC)
+$(B)/renderergl1/%.o: $(RCOMMONDIR)/%.cpp
+	$(DO_RENDERER_COMMON_CXX)
 $(B)/renderergl1/%.o: $(RGL1DIR)/%.c
 	$(DO_RENDERERGL1_CC)
+$(B)/renderergl1/%.o: $(RGL1DIR)/%.cpp
+	$(DO_RENDERERGL1_CXX)
 $(B)/renderergl1/%.o: $(CMDIR)/%.c
 	$(DO_RENDERERGL1_CC)
 $(B)/renderergl1/%.o: $(CMDIR)/%.cpp
@@ -2854,6 +2733,10 @@ $(B)/renderergl2/%.o: $(RCOMMONDIR)/%.c
 	$(DO_RENDERER_COMMON_CC)
 $(B)/renderergl2/%.o: $(RGL2DIR)/%.c
 	$(DO_RENDERERGL2_CC)
+$(B)/renderergl2/%.o: $(RCOMMONDIR)/%.cpp
+	$(DO_RENDERER_COMMON_CXX)
+$(B)/renderergl2/%.o: $(RGL2DIR)/%.cpp
+	$(DO_RENDERERGL2_CXX)
 
 $(B)/ded/%.o: $(ASMDIR)/%.s
 	$(DO_DED_AS)
@@ -2883,14 +2766,17 @@ $(B)/ded/%.o: $(SYSDIR)/%.c
 $(B)/ded/%.o: $(SYSDIR)/%.cpp
 	$(DO_DED_CXX)
 
-$(B)/ded/%.o: $(SYSDIR)/%.m
-	$(DO_DED_CC)
+$(B)/ded/%.o: $(SYSDIR)/%.mm
+	$(DO_DED_CXX)
 
 $(B)/ded/%.o: $(SYSDIR)/%.rc
 	$(DO_WINDRES)
 
 $(B)/ded/%.o: $(NDIR)/%.c
 	$(DO_DED_CC)
+
+$(B)/ded/%.o: $(NDIR)/%.cpp
+	$(DO_DED_CXX)
 
 # Extra dependencies to ensure the git version is incorporated
 ifeq ($(USE_GIT),1)
@@ -2988,6 +2874,7 @@ clean-release:
 
 clean2:
 	@echo "CLEAN $(B)"
+	@rm -rf $(B)/scripts
 	@rm -f $(OBJ)
 	@rm -f $(OBJ_D_FILES)
 	@rm -f $(STRINGOBJ)

@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -22,14 +23,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 
-#include "../qcommon/q_shared.h"
-#include "../qcommon/cvar.h"
-#include "../qcommon/files.h"
-#include "../renderercommon/tr_types.h"
-#include "../game/bg_public.h"
+#include "qcommon/q_shared.h"
+#include "renderercommon/tr_types.h"
+#include "game/bg_public.h"
 #include "cg_public.h"
 #include "binaryshader.h"
-#include "../ui/ui_shared.h"
+#include "ui/ui_shared.h"
 
 // The entire cgame module is unloaded and reloaded on each level change,
 // so there is NO persistant data between levels on the client side.
@@ -1436,6 +1435,12 @@ typedef struct
   void ( *function )( void );
 } consoleCommand_t;
 
+typedef struct
+{
+  char *cmd;
+  void (*function)( int argNum );
+} consoleCommandCompletions_t;
+
 //==============================================================================
 
 extern  cgs_t     cgs;
@@ -1824,6 +1829,7 @@ void          CG_ProcessSnapshots( void );
 //
 // cg_consolecmds.c
 //
+qboolean CG_Console_CompleteArgument( int argNum );
 qboolean      CG_ConsoleCommand( void );
 void          CG_InitConsoleCommands( void );
 qboolean      CG_RequestScores( void );
@@ -2280,6 +2286,7 @@ qboolean      trap_GetEntityToken( char *buffer, int bufferSize );
 int           trap_GetDemoState( void );
 int           trap_GetDemoPos( void );
 void          trap_GetDemoName( char *buffer, int size );
+void          trap_Field_CompleteList( char *listJson  );
 
 // cg_drawCrosshair settings
 #define CROSSHAIR_ALWAYSOFF       0

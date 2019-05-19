@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -20,10 +21,9 @@ along with Tremulous; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-//
+
 #ifndef __TR_TYPES_H
 #define __TR_TYPES_H
-
 
 #define	MAX_DLIGHTS		32		// can't be increased, because bit flags are used on surfaces
 
@@ -198,7 +198,7 @@ typedef struct {
 	glHardwareType_t		hardwareType;
 
 	qboolean				deviceSupportsGamma;
-	textureCompression_t	textureCompression;
+	int/*textureCompression_t*/	textureCompression;
 	qboolean				textureEnvAddAvailable;
 
 	int						vidWidth, vidHeight;

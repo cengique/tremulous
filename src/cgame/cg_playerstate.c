@@ -2,6 +2,7 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
+Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -25,7 +26,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // With normal play, this will be done after local prediction, but when
 // following another player or playing back a demo, it will be checked
 // when the snapshot transitions like all the other entities
-
 
 #include "cg_local.h"
 
@@ -311,4 +311,3 @@ void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops )
     cg.chargeMeterAlpha = 0.0f;
   }
 }
-
