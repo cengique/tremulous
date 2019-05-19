@@ -81,6 +81,9 @@ because the build system is still in Unix environment:
 ```bash
 git clone -c core.eol=lf ...
 ```
+(WARNING: Be careful to not commit back library files from this clone since their line-endings may change)
+
+To build the Tremulous binaries do:
 
 ```bash
 docker run -t -i -v $(pwd):/usr/src wtfbbqhax/tremulous:v2 make USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 PLATFORM=mingw32
