@@ -35,9 +35,9 @@ If you want to build against system libraries, the following packages are necess
 * LibCURL4
 * LibOpenAL
 * Libfreetype6
-* Lua 5.2 
+* Lua 5.2
 
-On Ubuntu yakkety (specifically) you can install all the packages necessary with the following:
+On Ubuntu Yakkety (specifically) you can install all the packages necessary with the following:
 
 ```
 apt install -y cmake libgl1-mesa-dev libsdl2-dev libcurl4-openssl-dev libopenal-dev libfreetype6-dev mingw-w64 g++-mingw-w64 g++-multilib git zip vim-nox curl rsync
@@ -72,12 +72,37 @@ make
 
 # How to build for Win64
 
-Windows binaries are built using a Docker container.
+Windows binaries can be built on non-Unix environments using a Docker container.
 Click [here](https://www.docker.com/) to learn more about Docker.
+
+Note that on Windows, you have to clone this Git repository with Unix line endings 
+because the build system is still in Unix environment:
+
+```bash
+git clone -c core.eol=lf ...
+```
+
+```bash
+docker run -t -i -v $(pwd):/usr/src wtfbbqhax/tremulous:v2 make USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 PLATFORM=mingw32
+```
+
+On Windows, make sure in the Docker Desktop settings that the drive you have the source 
+code is selected under "Shared Drives". Then replace `$(pwd)` with the actual folder where the 
+source resides (e.g. `"C:\Users\...\Documents\tremulous"`).
+
+To run:
+
+```bash
+cd build/release-mingw32-x86_64/
+./tremulous.exe +set fs_basepath .
+```
+
+(use backslashes `\` if you are using Command Prompt).
+
+Optionally, you can build the Docker image from scratch:
 
 ```bash
 docker build -t wtfbbqhax/tremulous:v2 .
-docker run -t -i -v $(pwd):/usr/src wtfbbqhax/tremulous:v2 make USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 PLATFORM=mingw32
 ```
 
 # Where do I get the assets?
@@ -94,6 +119,8 @@ Or you can checkout the entire repository:
 ```bash
 git clone https://github.com/wtfbbqhax/tremulous-data.git
 ```
+
+Copy the contents of the assets folder as a new `base/` folder in the release location.
 
 # About Lua
 
